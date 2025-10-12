@@ -18,7 +18,7 @@ embedded-hal = "1.0"
 
 [dependencies.arduino-hal]
 git = "https://github.com/rahix/avr-hal"
-rev = "5ccdd12d724d5b65273eb33a27cb55ab2ddcc865"
+rev = "07ad52325c15abd9ab3832a206eb2dc0c86f60b0"
 features = ["arduino-uno"]
 
 # Configure the build for minimal size - AVRs have very little program memory
