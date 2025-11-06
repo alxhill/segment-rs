@@ -5,6 +5,7 @@ use arduino_hal::prelude::*;
 use embedded_hal::i2c::I2c;
 use panic_halt as _;
 
+
 #[arduino_hal::entry]
 fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
@@ -19,11 +20,12 @@ fn main() -> ! {
         50000,
     );
 
-    let mut buf = [0u8; 8];
+    let mut display_buf = [0u16; 9];
 
     loop {
-        I2c::write(&mut i2c, 0x70, &buf).unwrap();
-        for b in buf.iter_mut() {
+        let buf: &[u8] = bytemuck::cast_slice(&mut display_buf);
+        I2c::write(&mut i2c, 0x70, &buf[1..]).unwrap();
+        for b in display_buf.iter_mut().skip(1) {
             *b = *b ^ 1;
         }
         arduino_hal::delay_ms(1000);
