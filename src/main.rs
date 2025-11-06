@@ -38,7 +38,7 @@ fn main() -> ! {
 
     let mut display_buf = [0u16; 6];
 
-    let mut dot: u16 = 1 << 7;
+    let dot: u16 = 0b1000_0000;
 
     loop {
         let buf: &[u8] = bytemuck::cast_slice(&mut display_buf);
@@ -52,14 +52,18 @@ fn main() -> ! {
             if *number > 9 {
                 *number = 0;
             }
-            dot ^= 1 << 7;
-            display_buf[idx + 1] = NUMBERS[*number as usize] as u16 | dot;
+
+            display_buf[idx + 1] = NUMBERS[*number as usize] as u16;
+
+            if *number == 1 {
+                display_buf[idx + 1] |= dot;
+            }
             *number += 1;
         }
 
-        // flash the colon
-        display_buf[3] ^= 0x2;
+        // show the colon
+        display_buf[3] = 0x2;
 
-        arduino_hal::delay_ms(500);
+        arduino_hal::delay_ms(100);
     }
 }
