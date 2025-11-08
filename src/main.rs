@@ -4,8 +4,6 @@
 mod sevseg;
 
 use crate::sevseg::{Digit, Seg, SevenSeg};
-use arduino_hal::prelude::*;
-use embedded_hal::i2c::I2c;
 use panic_halt as _;
 use ufmt::uwriteln;
 
