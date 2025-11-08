@@ -1,8 +1,3 @@
-use arduino_hal::pac::TWI;
-use arduino_hal::port::mode::{Floating, Input, PullUp};
-use arduino_hal::port::Pin;
-use arduino_hal::{port, Peripherals, Pins};
-use core::ops::{BitOr, Deref};
 use embedded_hal::i2c::I2c;
 
 const BLINK_CMD: u8 = 0x80;
