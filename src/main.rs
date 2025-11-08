@@ -46,9 +46,12 @@ fn main() -> ! {
         for i in 0..4 {
             let idx = (start_idx + i) % nums.len();
             output[i] = nums[idx].seg_display();
+            if idx == 1 {
+                output[i] |= Seg::Dot as u16;
+            }
         }
 
-        seg.write((output[0], Seg::Dot), output[1], output[2], output[3], true);
+        seg.write(output[0], output[1], output[2], output[3], true);
 
         start_idx += 1;
         arduino_hal::delay_ms(100);
