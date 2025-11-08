@@ -3,12 +3,12 @@
 
 mod sevseg;
 
+use crate::sevseg::{Digit, Seg, SevenSeg};
 use arduino_hal::i2c::{Direction, I2cOps};
 use arduino_hal::prelude::*;
 use embedded_hal::i2c::I2c;
 use panic_halt as _;
 use ufmt::{uwrite, uwriteln};
-use crate::sevseg::{Digit, Seg, SevenSeg};
 
 const NUMBERS: &[u8] = &[
     0b00111111, // 0
@@ -58,51 +58,67 @@ fn main() -> ! {
     //
     // let dot: u16 = 0b1000_0000;
 
-    uwriteln!(serial, "init seven seg");
+    uwriteln!(serial, "init seven seg").unwrap();
 
     let mut seg = SevenSeg::init(i2c, 0x70);
 
     uwriteln!(serial, "starting loop").unwrap();
 
+    let nums = [
+        Digit::Zero,
+        Digit::One,
+        Digit::Two,
+        Digit::Three,
+        Digit::Four,
+        Digit::Five,
+        Digit::Six,
+        Digit::Seven,
+        Digit::Eight,
+        Digit::Nine,
+    ];
+
+    let mut output = [Digit::Zero; 4];
+
     let mut colon = true;
 
+    let start_idx = 0;
+
     loop {
-        seg.write(
-            &Digit::One,
-            &Digit::Two,
-            &Digit::Three,
-            &Digit::One,
-            colon,
-        );
+        for i in 0..4 {
+            let idx = (start_idx + i) % nums.len();
+            output[i] = nums[idx];
+        }
+
+        seg.write(output[0], output[1], output[2], output[3], colon);
+
         colon = !colon;
         arduino_hal::delay_ms(1000);
     }
 
-//     loop {
-//         let buf: &[u8] = bytemuck::cast_slice(&mut display_buf);
-//         I2c::write(&mut i2c, 0x70, &buf[1..]).unwrap();
-//         // uwriteln!(serial, "wrote {:?}", numbers).unwrap();
-//
-//         for (idx, number) in numbers.iter_mut().enumerate() {
-//             if idx == 2 {
-//                 continue;
-//             }
-//
-//             if *number > 9 {
-//                 *number = 0;
-//             }
-//
-//             display_buf[idx + 1] = NUMBERS[*number as usize] as u16;
-//
-//             if *number == 1 {
-//                 display_buf[idx + 1] |= dot;
-//             }
-//             *number += 1;
-//         }
-// // show the colon
-//         display_buf[3] = 0x2;
-//
-//         arduino_hal::delay_ms(100);
-//     }
-
+    //     loop {
+    //         let buf: &[u8] = bytemuck::cast_slice(&mut display_buf);
+    //         I2c::write(&mut i2c, 0x70, &buf[1..]).unwrap();
+    //         // uwriteln!(serial, "wrote {:?}", numbers).unwrap();
+    //
+    //         for (idx, number) in numbers.iter_mut().enumerate() {
+    //             if idx == 2 {
+    //                 continue;
+    //             }
+    //
+    //             if *number > 9 {
+    //                 *number = 0;
+    //             }
+    //
+    //             display_buf[idx + 1] = NUMBERS[*number as usize] as u16;
+    //
+    //             if *number == 1 {
+    //                 display_buf[idx + 1] |= dot;
+    //             }
+    //             *number += 1;
+    //         }
+    // // show the colon
+    //         display_buf[3] = 0x2;
+    //
+    //         arduino_hal::delay_ms(100);
+    //     }
 }
