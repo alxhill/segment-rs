@@ -3,7 +3,7 @@
 
 mod sevseg;
 
-use crate::sevseg::{Digit, Seg, SevenSeg};
+use crate::sevseg::{Digit, Seg, SegDisplay, SevenSeg};
 use panic_halt as _;
 use ufmt::uwriteln;
 
@@ -21,11 +21,7 @@ fn main() -> ! {
         50000,
     );
 
-    uwriteln!(serial, "init seven seg").unwrap();
-
-    let mut seg = SevenSeg::init(i2c, 0x70);
-
-    uwriteln!(serial, "starting loop").unwrap();
+    let mut seg = SevenSeg::init(i2c, 0x70, 15);
 
     let nums = [
         Digit::Zero,
@@ -40,14 +36,16 @@ fn main() -> ! {
         Digit::Nine,
     ];
 
-    let mut output = [Digit::Zero; 4];
+    let mut output = [Digit::Zero as u16; 4];
 
     let mut start_idx = 0;
+
+    uwriteln!(&mut serial, "Starting Write Loop").unwrap();
 
     loop {
         for i in 0..4 {
             let idx = (start_idx + i) % nums.len();
-            output[i] = nums[idx];
+            output[i] = nums[idx].seg_display();
         }
 
         seg.write((output[0], Seg::Dot), output[1], output[2], output[3], true);

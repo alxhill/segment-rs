@@ -101,11 +101,11 @@ impl<T1: SegDisplay, T2: SegDisplay> SegDisplay for (T1, T2) {
 }
 
 impl SevenSeg {
-    pub fn init(mut i2c: arduino_hal::I2c, addr: u8) -> Self {
+    pub fn init(mut i2c: arduino_hal::I2c, addr: u8, brightness: u8) -> Self {
         i2c.write(addr, &[ENABLE_OSCILLATOR]).unwrap();
         i2c.write(addr, &[0u8; 16]).unwrap();
         i2c.write(addr, &[BLINK_CMD | DISPLAY_ON]).unwrap();
-        i2c.write(addr, &[BRIGHTNESS_CMD | MAX_BRIGHTNESS]).unwrap();
+        i2c.write(addr, &[BRIGHTNESS_CMD | brightness.clamp(0, MAX_BRIGHTNESS)]).unwrap();
 
         Self { addr, i2c }
     }
