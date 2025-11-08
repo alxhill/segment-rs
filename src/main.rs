@@ -8,7 +8,7 @@ use arduino_hal::prelude::*;
 use embedded_hal::i2c::I2c;
 use panic_halt as _;
 use ufmt::{uwrite, uwriteln};
-use crate::sevseg::Segment;
+use crate::sevseg::{Digit, Seg, SevenSeg};
 
 const NUMBERS: &[u8] = &[
     0b00111111, // 0
@@ -35,29 +35,48 @@ fn main() -> ! {
 
     let mut serial = arduino_hal::default_serial!(dp, pins, 57600);
 
-    let mut i2c = arduino_hal::I2c::new(
+    let i2c = arduino_hal::I2c::new(
         dp.TWI,
         pins.a4.into_pull_up_input(),
         pins.a5.into_pull_up_input(),
         50000,
     );
-    // turn on oscillator
-    I2c::write(&mut i2c, 0x70, &[ENABLE_OSCILLATOR]).unwrap();
 
-    let display_on_cmd = BLINK_CMD | DISPLAY_ON;
-    I2c::write(&mut i2c, 0x70, &[display_on_cmd]).unwrap();
+    // // turn on oscillator
+    // I2c::write(&mut i2c, 0x70, &[ENABLE_OSCILLATOR]).unwrap();
+    //
+    // let display_on_cmd = BLINK_CMD | DISPLAY_ON;
+    // I2c::write(&mut i2c, 0x70, &[display_on_cmd]).unwrap();
+    //
+    // let brightness_cmd = BRIGHTNESS_CMD | 15; // max brightness = 15
+    // I2c::write(&mut i2c, 0x70, &[brightness_cmd]).unwrap();
+    //
+    // // third digit controls the colon
+    // let mut numbers: [u8; 5] = [1, 2, 0x2, 3, 4];
+    //
+    // let mut display_buf = [0u16; 9];
+    //
+    // let dot: u16 = 0b1000_0000;
 
-    let brightness_cmd = BRIGHTNESS_CMD | 15; // max brightness = 15
-    I2c::write(&mut i2c, 0x70, &[brightness_cmd]).unwrap();
+    uwriteln!(serial, "init seven seg");
 
-    // third digit controls the colon
-    let mut numbers: [u8; 5] = [1, 2, 0x2, 3, 4];
-
-    let mut display_buf = [0u16; 9];
-
-    let dot: u16 = 0b1000_0000;
+    let mut seg = SevenSeg::init(i2c, 0x70);
 
     uwriteln!(serial, "starting loop").unwrap();
+
+    let mut colon = true;
+
+    loop {
+        seg.write(
+            &Digit::One,
+            &Digit::Two,
+            &Digit::Three,
+            &Digit::One,
+            colon,
+        );
+        colon = !colon;
+        arduino_hal::delay_ms(1000);
+    }
 
 //     loop {
 //         let buf: &[u8] = bytemuck::cast_slice(&mut display_buf);
@@ -86,35 +105,4 @@ fn main() -> ! {
 //         arduino_hal::delay_ms(100);
 //     }
 
-    let mut byte = 0b0000_0001u16;
-
-    let display_buf = [
-        Segment::Top,
-        Segment::TopRight,
-        Segment::BottomRight,
-        Segment::Bottom,
-        Segment::BottomLeft,
-        Segment::TopLeft,
-        Segment::Middle,
-        Segment::Dot,
-    ];
-
-    let mut idx: usize = 0;
-
-    loop {
-        let byte = display_buf[idx].bytes();
-        uwriteln!(serial, "byte: {:x}", byte).unwrap();
-
-        let mut buf = [byte as u16; 9];
-        buf[0] = 0;
-        let write: &[u8] = bytemuck::cast_slice(&buf);
-        I2c::write(&mut i2c, 0x70, &write[1..]).unwrap();
-
-        idx += 1;
-        if idx >= display_buf.len() {
-            idx = 0;
-        }
-
-        arduino_hal::delay_ms(1000);
-    }
 }

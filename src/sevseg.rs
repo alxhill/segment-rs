@@ -1,4 +1,7 @@
-use arduino_hal::{Peripherals, Pins};
+use arduino_hal::{port, Peripherals, Pins};
+use arduino_hal::pac::TWI;
+use arduino_hal::port::mode::{Floating, Input, PullUp};
+use arduino_hal::port::Pin;
 use embedded_hal::i2c::I2c;
 
 const BLINK_CMD: u8 = 0x80;
@@ -16,32 +19,57 @@ pub struct SevenSeg {
 
 #[repr(u8)]
 #[derive(Copy, Clone)]
-pub enum Segment {
+pub enum Seg {
     Top,
-    TopRight,
-    BottomRight,
-    Bottom,
-    BottomLeft,
-    TopLeft,
-    Middle,
+    TopR,
+    BotR,
+    Bot,
+    BotL,
+    TopL,
+    Mid,
     Dot,
 }
 
-impl Segment {
+impl Seg {
     pub fn bytes(&self) -> u16 {
         1 << *self as u8
     }
 }
 
-impl SevenSeg {
-    pub fn init(dp: Peripherals, pins: Pins, addr: u8) -> Self {
-        let mut i2c = arduino_hal::I2c::new(
-            dp.TWI,
-            pins.a4.into_pull_up_input(),
-            pins.a5.into_pull_up_input(),
-            50000,
-        );
+pub enum Digit {
+    Zero,
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+}
 
+
+impl Digit {
+    pub fn bytes(&self) -> u16 {
+        match self {
+            Digit::One => Seg::TopR.bytes() | Seg::BotR.bytes(),
+            Digit::Two => Seg::Top.bytes() | Seg::TopR.bytes() | Seg::Mid.bytes() | Seg::BotL.bytes() | Seg::Bot.bytes(),
+            Digit::Three => Seg::Top.bytes() | Seg::Mid.bytes() | Seg::Bot.bytes() | Seg::BotR.bytes() | Seg::TopR.bytes(),
+            // Digit::Four => {}
+            // Digit::Five => {}
+            // Digit::Six => {}
+            // Digit::Seven => {}
+            // Digit::Eight => {}
+            // Digit::Nine => {}
+            _ => panic!()
+        }
+    }
+}
+
+
+impl SevenSeg {
+    pub fn init(mut i2c: arduino_hal::I2c, addr: u8) -> Self {
         i2c.write(addr, &[ENABLE_OSCILLATOR]).unwrap();
         i2c.write(addr, &[0u8; 16]).unwrap();
         i2c.write(addr, &[BLINK_CMD | DISPLAY_ON]).unwrap();
@@ -51,5 +79,21 @@ impl SevenSeg {
             addr,
             i2c
         }
+    }
+
+    pub fn write(
+        &mut self,
+        char1: &Digit,
+        char2: &Digit,
+        char3: &Digit,
+        char4: &Digit,
+        colon: bool,
+    ) {
+        let colon = if colon { 0x2 } else { 0x0 };
+        let display_buf = [0u16, char1.bytes(), char2.bytes(), colon, char3.bytes(), char4.bytes()];
+
+        let write_buf = bytemuck::cast_slice(&display_buf);
+
+        self.i2c.write(self.addr, &write_buf[1..]).unwrap();
     }
 }
