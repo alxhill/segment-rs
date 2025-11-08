@@ -101,13 +101,13 @@ impl<T1: SegDisplay, T2: SegDisplay> SegDisplay for (T1, T2) {
     }
 }
 
-impl <T: SegDisplay> SegDisplay for [T] {
+impl<T: SegDisplay> SegDisplay for [T] {
     fn seg_display(&self) -> u16 {
         self.iter().fold(0u16, |acc, el| acc | el.seg_display())
     }
 }
 
-impl <T: SegDisplay, const N: usize> SegDisplay for [T; N] {
+impl<T: SegDisplay, const N: usize> SegDisplay for [T; N] {
     fn seg_display(&self) -> u16 {
         self.as_slice().seg_display()
     }
@@ -118,12 +118,37 @@ impl SevenSeg {
         i2c.write(addr, &[ENABLE_OSCILLATOR]).unwrap();
         i2c.write(addr, &[0u8; 16]).unwrap();
         i2c.write(addr, &[BLINK_CMD | DISPLAY_ON]).unwrap();
-        i2c.write(addr, &[BRIGHTNESS_CMD | brightness.clamp(0, MAX_BRIGHTNESS)]).unwrap();
+        i2c.write(
+            addr,
+            &[BRIGHTNESS_CMD | brightness.clamp(0, MAX_BRIGHTNESS)],
+        )
+        .unwrap();
 
         Self { addr, i2c }
     }
 
-    pub fn write(&mut self, char1: impl SegDisplay, char2: impl SegDisplay, char3: impl SegDisplay, char4: impl SegDisplay, colon: bool) {
+    pub fn write_int(&mut self, mut val: u16) {
+        if val > 9999 {
+            val = 9999;
+        }
+
+        let mut digits = [0u16; 4];
+        digits[0] = (val % 10) as u16;
+        digits[1] = (val / 10) % 10;
+        digits[2] = (val / 100) % 10;
+        digits[3] = (val / 1000) % 10;
+
+        self.write(digits[0], digits[1], digits[2], digits[3], false);
+    }
+
+    pub fn write(
+        &mut self,
+        char1: impl SegDisplay,
+        char2: impl SegDisplay,
+        char3: impl SegDisplay,
+        char4: impl SegDisplay,
+        colon: bool,
+    ) {
         let colon = if colon { 0x2 } else { 0x0 };
         let display_buf = [
             0u16, // write cmd (u8, first half of u16 is skipped write
