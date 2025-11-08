@@ -73,6 +73,23 @@ pub enum Digit {
     ),
 }
 
+impl Digit {
+    pub fn from_u16(value: u16) -> Self {
+        match value {
+            0 => Digit::Zero,
+            1 => Digit::One,
+            2 => Digit::Two,
+            3 => Digit::Three,
+            4 => Digit::Four,
+            5 => Digit::Five,
+            6 => Digit::Six,
+            7 => Digit::Seven,
+            8 => Digit::Eight,
+            9 => Digit::Nine,
+            _ => Digit::Zero, // meh?
+        }
+    }
+}
 pub trait SegDisplay {
     fn seg_display(&self) -> u16;
 }
@@ -132,11 +149,11 @@ impl SevenSeg {
             val = 9999;
         }
 
-        let mut digits = [0u16; 4];
-        digits[0] = (val % 10) as u16;
-        digits[1] = (val / 10) % 10;
-        digits[2] = (val / 100) % 10;
-        digits[3] = (val / 1000) % 10;
+        let mut digits = [Digit::Zero; 4];
+        digits[3] = Digit::from_u16(val % 10);
+        digits[2] = Digit::from_u16((val / 10) % 10);
+        digits[1] = Digit::from_u16((val / 100) % 10);
+        digits[0] = Digit::from_u16((val / 1000) % 10);
 
         self.write(digits[0], digits[1], digits[2], digits[3], false);
     }
