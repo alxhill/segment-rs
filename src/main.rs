@@ -1,12 +1,16 @@
 #![no_std]
 #![no_main]
 
+mod sevseg;
+
+use arduino_hal::i2c::{Direction, I2cOps};
 use arduino_hal::prelude::*;
 use embedded_hal::i2c::I2c;
 use panic_halt as _;
-use ufmt::uwrite;
+use ufmt::{uwrite, uwriteln};
+use crate::sevseg::Segment;
 
-static NUMBERS: &[u8] = &[
+const NUMBERS: &[u8] = &[
     0b00111111, // 0
     0b00000110, // 1
     0b01011011, // 2
@@ -18,6 +22,11 @@ static NUMBERS: &[u8] = &[
     0b01111111, // 8
     0b01101111, // 9
 ];
+
+const BLINK_CMD: u8 = 0x80;
+const BRIGHTNESS_CMD: u8 = 0xE0;
+const DISPLAY_ON: u8 = 0x01;
+const ENABLE_OSCILLATOR: u8 = 0x21u8;
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -32,38 +41,80 @@ fn main() -> ! {
         pins.a5.into_pull_up_input(),
         50000,
     );
+    // turn on oscillator
+    I2c::write(&mut i2c, 0x70, &[ENABLE_OSCILLATOR]).unwrap();
+
+    let display_on_cmd = BLINK_CMD | DISPLAY_ON;
+    I2c::write(&mut i2c, 0x70, &[display_on_cmd]).unwrap();
+
+    let brightness_cmd = BRIGHTNESS_CMD | 15; // max brightness = 15
+    I2c::write(&mut i2c, 0x70, &[brightness_cmd]).unwrap();
 
     // third digit controls the colon
     let mut numbers: [u8; 5] = [1, 2, 0x2, 3, 4];
 
-    let mut display_buf = [0u16; 6];
+    let mut display_buf = [0u16; 9];
 
     let dot: u16 = 0b1000_0000;
 
+    uwriteln!(serial, "starting loop").unwrap();
+
+//     loop {
+//         let buf: &[u8] = bytemuck::cast_slice(&mut display_buf);
+//         I2c::write(&mut i2c, 0x70, &buf[1..]).unwrap();
+//         // uwriteln!(serial, "wrote {:?}", numbers).unwrap();
+//
+//         for (idx, number) in numbers.iter_mut().enumerate() {
+//             if idx == 2 {
+//                 continue;
+//             }
+//
+//             if *number > 9 {
+//                 *number = 0;
+//             }
+//
+//             display_buf[idx + 1] = NUMBERS[*number as usize] as u16;
+//
+//             if *number == 1 {
+//                 display_buf[idx + 1] |= dot;
+//             }
+//             *number += 1;
+//         }
+// // show the colon
+//         display_buf[3] = 0x2;
+//
+//         arduino_hal::delay_ms(100);
+//     }
+
+    let mut byte = 0b0000_0001u16;
+
+    let display_buf = [
+        Segment::Top,
+        Segment::TopRight,
+        Segment::BottomRight,
+        Segment::Bottom,
+        Segment::BottomLeft,
+        Segment::TopLeft,
+        Segment::Middle,
+        Segment::Dot,
+    ];
+
+    let mut idx: usize = 0;
+
     loop {
-        let buf: &[u8] = bytemuck::cast_slice(&mut display_buf);
-        I2c::write(&mut i2c, 0x70, &buf[1..]).unwrap();
+        let byte = display_buf[idx].bytes();
+        uwriteln!(serial, "byte: {:x}", byte).unwrap();
 
-        for (idx, number) in numbers.iter_mut().enumerate() {
-            if idx == 2 {
-                continue;
-            }
+        let mut buf = [byte as u16; 9];
+        buf[0] = 0;
+        let write: &[u8] = bytemuck::cast_slice(&buf);
+        I2c::write(&mut i2c, 0x70, &write[1..]).unwrap();
 
-            if *number > 9 {
-                *number = 0;
-            }
-
-            display_buf[idx + 1] = NUMBERS[*number as usize] as u16;
-
-            if *number == 1 {
-                display_buf[idx + 1] |= dot;
-            }
-            *number += 1;
+        idx += 1;
+        if idx >= display_buf.len() {
+            idx = 0;
         }
 
-        // show the colon
-        display_buf[3] = 0x2;
-
-        arduino_hal::delay_ms(100);
+        arduino_hal::delay_ms(1000);
     }
 }
