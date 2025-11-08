@@ -24,6 +24,7 @@ pub enum Seg {
     Dot = 1 << 7,
 }
 
+#[macro_export]
 macro_rules! segs {
     ($($s:expr),* $(,)?) => { 0u16 $(| ($s as u16))* };
 }
@@ -97,6 +98,18 @@ impl SegDisplay for Seg {
 impl<T1: SegDisplay, T2: SegDisplay> SegDisplay for (T1, T2) {
     fn seg_display(&self) -> u16 {
         self.0.seg_display() | self.1.seg_display()
+    }
+}
+
+impl <T: SegDisplay> SegDisplay for [T] {
+    fn seg_display(&self) -> u16 {
+        self.iter().fold(0u16, |acc, el| acc | el.seg_display())
+    }
+}
+
+impl <T: SegDisplay, const N: usize> SegDisplay for [T; N] {
+    fn seg_display(&self) -> u16 {
+        self.as_slice().seg_display()
     }
 }
 
