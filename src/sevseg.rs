@@ -77,6 +77,34 @@ pub enum Digit {
     ),
 }
 
+pub trait SegDisplay {
+    fn seg_display(&self) -> u16;
+}
+
+impl SegDisplay for u16 {
+    fn seg_display(&self) -> u16 {
+        *self
+    }
+}
+
+impl SegDisplay for Digit {
+    fn seg_display(&self) -> u16 {
+        *self as u16
+    }
+}
+
+impl SegDisplay for Seg {
+    fn seg_display(&self) -> u16 {
+        *self as u16
+    }
+}
+
+impl<T1: SegDisplay, T2: SegDisplay> SegDisplay for (T1, T2) {
+    fn seg_display(&self) -> u16 {
+        self.0.seg_display() | self.1.seg_display()
+    }
+}
+
 impl SevenSeg {
     pub fn init(mut i2c: arduino_hal::I2c, addr: u8) -> Self {
         i2c.write(addr, &[ENABLE_OSCILLATOR]).unwrap();
@@ -87,15 +115,15 @@ impl SevenSeg {
         Self { addr, i2c }
     }
 
-    pub fn write(&mut self, char1: Digit, char2: Digit, char3: Digit, char4: Digit, colon: bool) {
+    pub fn write(&mut self, char1: impl SegDisplay, char2: impl SegDisplay, char3: impl SegDisplay, char4: impl SegDisplay, colon: bool) {
         let colon = if colon { 0x2 } else { 0x0 };
         let display_buf = [
-            0u16,
-            char1 as u16,
-            char2 as u16,
+            0u16, // write cmd (u8, first half of u16 is skipped write
+            char1.seg_display(),
+            char2.seg_display(),
             colon,
-            char3 as u16,
-            char4 as u16,
+            char3.seg_display(),
+            char4.seg_display(),
         ];
 
         let write_buf = bytemuck::cast_slice(&display_buf);

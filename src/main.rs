@@ -79,9 +79,7 @@ fn main() -> ! {
 
     let mut output = [Digit::Zero; 4];
 
-    let mut colon = true;
-
-    let start_idx = 0;
+    let mut start_idx = 0;
 
     loop {
         for i in 0..4 {
@@ -89,10 +87,10 @@ fn main() -> ! {
             output[i] = nums[idx];
         }
 
-        seg.write(output[0], output[1], output[2], output[3], colon);
+        seg.write((output[0], Seg::Dot), output[1], output[2], output[3], true);
 
-        colon = !colon;
-        arduino_hal::delay_ms(1000);
+        start_idx += 1;
+        arduino_hal::delay_ms(100);
     }
 
     //     loop {
