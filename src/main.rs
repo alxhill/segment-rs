@@ -28,11 +28,21 @@ fn main() -> ! {
     let potentiometer = pins.a3.into_analog_input(&mut adc);
 
     loop {
-        let pot_val = potentiometer.analog_read(&mut adc);
+        let p1 = potentiometer.analog_read(&mut adc);
+        arduino_hal::delay_ms(50);
+
+        arduino_hal::delay_ms(50);
+        let p2 = potentiometer.analog_read(&mut adc);
+        arduino_hal::delay_ms(50);
+        let p3 = potentiometer.analog_read(&mut adc);
+        arduino_hal::delay_ms(50);
+        let p4 = potentiometer.analog_read(&mut adc);
+
+        let pot_val = (p1 + p2 + p3 + p4) / 4;
+        // let pot_val = potentiometer.analog_read(&mut adc);
 
         seg.write_int(pot_val);
-
-        arduino_hal::delay_ms(200);
+        // arduino_hal::delay_ms(200);
     }
 }
 
