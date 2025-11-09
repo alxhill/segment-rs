@@ -1,12 +1,12 @@
 [package]
-name = "sand-sim"
+name = "segment-rs"
 version = "0.1.0"
 authors = ["Alexander Hill <me@alxhill.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [[bin]]
-name = "sand-sim"
+name = "segment-rs"
 test = false
 bench = false
 
