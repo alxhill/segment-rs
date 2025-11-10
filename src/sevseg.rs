@@ -1,14 +1,12 @@
-use embedded_hal::i2c::I2c;
-
 const BLINK_CMD: u8 = 0x80;
 const BRIGHTNESS_CMD: u8 = 0xE0;
 const DISPLAY_ON: u8 = 0x01;
 const ENABLE_OSCILLATOR: u8 = 0x21u8;
 const MAX_BRIGHTNESS: u8 = 15;
 
-pub struct SevenSeg {
+pub struct SevenSeg<T: embedded_hal::i2c::I2c> {
     addr: u8,
-    i2c: arduino_hal::I2c,
+    i2c: T,
 }
 
 #[repr(u16)]
@@ -130,8 +128,8 @@ impl<T: SegDisplay, const N: usize> SegDisplay for [T; N] {
     }
 }
 
-impl SevenSeg {
-    pub fn init(mut i2c: arduino_hal::I2c, addr: u8, brightness: u8) -> Self {
+impl<T: embedded_hal::i2c::I2c> SevenSeg<T> {
+    pub fn init(mut i2c: T, addr: u8, brightness: u8) -> Self {
         i2c.write(addr, &[ENABLE_OSCILLATOR]).unwrap();
         i2c.write(addr, &[0u8; 16]).unwrap();
         i2c.write(addr, &[BLINK_CMD | DISPLAY_ON]).unwrap();

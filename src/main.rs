@@ -47,7 +47,7 @@ fn main() -> ! {
 }
 
 #[allow(unused)]
-fn scroll_numbers(mut seg: SevenSeg) -> ! {
+fn scroll_numbers(mut seg: SevenSeg<arduino_hal::I2c>) -> ! {
     let nums = [
         Digit::Zero,
         Digit::One,
