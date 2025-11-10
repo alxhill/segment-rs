@@ -1,10 +1,9 @@
 #![no_std]
 #![no_main]
 
-mod sevseg;
-
-use crate::sevseg::{Digit, Seg, SegDisplay, SevenSeg};
 use panic_halt as _;
+
+use segment_rs::*;
 
 #[arduino_hal::entry]
 fn main() -> ! {
