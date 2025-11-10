@@ -146,14 +146,13 @@ impl<T: embedded_hal::i2c::I2c> SevenSeg<T> {
         if val > 9999 {
             val = 9999;
         }
-
-        let mut digits = [Digit::Zero; 4];
-        digits[3] = Digit::from_u16(val % 10);
-        digits[2] = Digit::from_u16((val / 10) % 10);
-        digits[1] = Digit::from_u16((val / 100) % 10);
-        digits[0] = Digit::from_u16((val / 1000) % 10);
-
-        self.write(digits[0], digits[1], digits[2], digits[3], false);
+        self.write(
+            Digit::from_u16((val / 1000) % 10),
+            Digit::from_u16((val / 100) % 10),
+            Digit::from_u16((val / 10) % 10),
+            Digit::from_u16(val % 10),
+            false,
+        );
     }
 
     pub fn write(
