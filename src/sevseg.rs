@@ -129,17 +129,22 @@ impl<T: SegDisplay, const N: usize> SegDisplay for [T; N] {
 }
 
 impl<T: embedded_hal::i2c::I2c> SevenSeg<T> {
-    pub fn init(mut i2c: T, addr: u8, brightness: u8) -> Self {
+    pub fn init(mut i2c: T, addr: u8) -> Self {
         i2c.write(addr, &[ENABLE_OSCILLATOR]).unwrap();
         i2c.write(addr, &[0u8; 16]).unwrap();
         i2c.write(addr, &[BLINK_CMD | DISPLAY_ON]).unwrap();
-        i2c.write(
-            addr,
-            &[BRIGHTNESS_CMD | brightness.clamp(0, MAX_BRIGHTNESS)],
-        )
-        .unwrap();
+        i2c.write(addr, &[BRIGHTNESS_CMD | MAX_BRIGHTNESS]).unwrap();
 
         Self { addr, i2c }
+    }
+
+    pub fn set_brightness(&mut self, brightness: u8) {
+        self.i2c
+            .write(
+                self.addr,
+                &[BRIGHTNESS_CMD | brightness.clamp(0, MAX_BRIGHTNESS)],
+            )
+            .unwrap();
     }
 
     pub fn write_int(&mut self, mut val: u16) {

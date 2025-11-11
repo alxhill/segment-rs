@@ -20,7 +20,7 @@ fn main() -> ! {
         50000,
     );
 
-    let mut seg = SevenSeg::init(i2c, 0x70, 15);
+    let mut seg = SevenSeg::init(i2c, 0x70);
 
     let mut adc = arduino_hal::Adc::new(dp.ADC, Default::default());
 
