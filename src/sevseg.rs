@@ -1,3 +1,5 @@
+use core::ops::BitOr;
+
 const BLINK_CMD: u8 = 0x80;
 const BRIGHTNESS_CMD: u8 = 0xE0;
 const DISPLAY_ON: u8 = 0x01;
@@ -12,6 +14,7 @@ pub struct SevenSeg<T: embedded_hal::i2c::I2c> {
 #[repr(u16)]
 #[derive(Copy, Clone)]
 pub enum Seg {
+    None = 0,
     Top = 1,
     TopR = 1 << 1,
     BotR = 1 << 2,
@@ -22,6 +25,15 @@ pub enum Seg {
     Dot = 1 << 7,
 }
 
+impl BitOr for Seg {
+    type Output = u16;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        self as u16 | rhs as u16
+    }
+}
+
+// allows bitwise OR operations on Seg enums in const contexts
 #[macro_export]
 macro_rules! segs {
     ($($s:expr),* $(,)?) => { 0u16 $(| ($s as u16))* };
