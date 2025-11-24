@@ -147,7 +147,7 @@ impl<T: embedded_hal::i2c::I2c> SevenSeg<T> {
             .unwrap();
     }
 
-    pub fn write_int(&mut self, mut val: u16) {
+    pub fn write_uint(&mut self, mut val: u16) {
         if val > 9999 {
             val = 9999;
         }
@@ -156,6 +156,46 @@ impl<T: embedded_hal::i2c::I2c> SevenSeg<T> {
             Digit::from_u16((val / 100) % 10),
             Digit::from_u16((val / 10) % 10),
             Digit::from_u16(val % 10),
+            false,
+        );
+    }
+
+    pub fn write_int(&mut self, mut val: i16) {
+        val = val.clamp(-999, 9999);
+
+        if val >= 0 {
+            return self.write_uint(val as u16);
+        }
+
+        let val = val.abs() as u16;
+
+        self.write(
+            Seg::Mid,
+            Digit::from_u16((val / 100) % 10),
+            Digit::from_u16((val / 10) % 10),
+            Digit::from_u16(val % 10),
+            false,
+        );
+    }
+
+    pub fn write_percent(&mut self, mut val: f32) {
+        val = val.clamp(0.0, 100.0);
+
+        if val == 100.0 {
+            return self.write(
+                Digit::One,
+                Digit::Zero,
+                (Digit::Zero, Seg::Dot),
+                Digit::Zero,
+                false,
+            );
+        }
+
+        self.write(
+            Digit::from_u16(((val as u16) / 10) % 10),
+            (Digit::from_u16((val as u16) % 10), Seg::Dot),
+            Digit::from_u16(((val * 10.0) as u16) % 10),
+            Digit::from_u16(((val * 100.0) as u16) % 10),
             false,
         );
     }

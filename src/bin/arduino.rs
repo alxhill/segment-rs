@@ -40,7 +40,7 @@ fn main() -> ! {
         let pot_val = (p1 + p2 + p3 + p4) / 4;
         // let pot_val = potentiometer.analog_read(&mut adc);
 
-        seg.write_int(pot_val);
+        seg.write_uint(pot_val);
         // arduino_hal::delay_ms(200);
     }
 }
