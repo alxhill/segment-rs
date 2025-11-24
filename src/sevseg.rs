@@ -212,6 +212,10 @@ impl<T: embedded_hal::i2c::I2c> SevenSeg<T> {
         );
     }
 
+    pub fn clear(&mut self) {
+        self.write(Seg::None, Seg::None, Seg::None, Seg::None, false);
+    }
+
     pub fn write(
         &mut self,
         char1: impl SegDisplay,
